@@ -147,7 +147,7 @@ function renderResults(products, globalUrl) {
     const outputRows = products.map((p, idx) => {
         const row = startNum + idx;
         return [
-            p.name, `=IMAGE(D${row})`, p.image, p.image,
+            p.name, `=IMAGE(D${row})`, p.image, "",
             globalUrl, "", "", "", 
             Utils.formatPriceVN(p.price), p.note || ""
         ].map(Utils.escapeTabular).join('\t');
