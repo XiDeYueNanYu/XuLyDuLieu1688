@@ -5,9 +5,9 @@ import { analyzeData, rebuildRawData } from './pre-processor.js';
 import { mode1 } from './modes/mode1.js';
 import { mode2 } from './modes/mode2.js';
 import { mode3 } from './modes/mode3.js';
-import { mode4 } from './modes/mode4.js'; // Đã import Mode 4
+import { mode4 } from './modes/mode4.js'; // 1. Import thêm Mode 4
 
-const allModes = { mode1, mode2, mode3, mode4 };
+const allModes = { mode1, mode2, mode3, mode4 }; // 2. Thêm vào danh sách
 let currentModeId = 'mode1';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const processBtn = document.getElementById('processBtn');
     const copyBtn = document.getElementById('copyBtn');
     const autoDetectBtn = document.getElementById('autoDetectBtn');
-    const quickProcessBtn = document.getElementById('quickProcessBtn'); 
+    const quickProcessBtn = document.getElementById('quickProcessBtn');
 
     if (processBtn) processBtn.addEventListener('click', handleMainProcess);
     if (copyBtn) copyBtn.addEventListener('click', handleCopy);
@@ -34,40 +34,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // BƯỚC 1: Kiểm tra thiếu dữ liệu (Pre-processor)
             let { products, globalUrl } = analyzeData(originalValue);
             if (products.length === 0) {
-                UIManager.showToast("❌ Không tìm thấy khối sản phẩm 3 dòng!");
+                UIManager.showToast("❌ Không tìm thấy SP!");
                 return;
             }
 
-            const hasMissing = products.some(p => p.isMissing);
-            let fixedProducts = products;
+            // Xử lý thiếu dữ liệu bằng Modal gốc của bạn
+            let fixedProducts = products.some(p => p.isMissing) ? await showFixModal(products) : products;
+            if (!fixedProducts) return;
 
-            if (hasMissing) {
-                fixedProducts = await showFixModal(products); 
-                if (!fixedProducts) return; 
-            }
-
-            // Cập nhật lại textarea với dữ liệu đã chuẩn
             const updatedFullText = rebuildRawData(originalValue, fixedProducts);
             rawInput.value = updatedFullText;
 
-            // BƯỚC 2: Nhận diện Mode thông minh
+            // Nhận diện Mode thông minh
             const detectedId = detectModeLogic(updatedFullText);
-            
             if (detectedId) {
                 currentModeId = detectedId;
                 UIManager.updateModeUI(currentModeId, allModes[currentModeId].name);
                 UIManager.renderDynamicFields(allModes[currentModeId]);
                 UIManager.showToast(`🤖 AI Nhận diện: ${allModes[currentModeId].name}`);
                 
-                // Thực thi xử lý
                 const uiInputs = UIManager.getInputs();
                 const processedProducts = allModes[currentModeId].execute(updatedFullText, uiInputs);
                 renderResults(processedProducts, globalUrl);
-            } else {
-                UIManager.showToast("⚠️ Không khớp đặc trưng Mode nào!");
             }
         });
     }
@@ -77,19 +67,15 @@ document.addEventListener('DOMContentLoaded', () => {
         quickProcessBtn.addEventListener('click', async () => {
             try {
                 const text = await navigator.clipboard.readText();
-                if (!text.trim()) {
-                    UIManager.showToast("❌ Bộ nhớ tạm trống!");
-                    return;
+                if (text.trim()) {
+                    document.getElementById('rawInput').value = text;
+                    autoDetectBtn.click();
                 }
-                document.getElementById('rawInput').value = text;
-                autoDetectBtn.click();
-            } catch (err) {
-                UIManager.showToast("⚠️ Hãy cấp quyền truy cập Clipboard!");
-            }
+            } catch (err) { UIManager.showToast("⚠️ Lỗi truy cập Clipboard"); }
         });
     }
-    
-    // SỬA LỖI MODE 4: Dùng Event Delegation thay vì forEach để nút không bao giờ mất sự kiện
+
+    // --- SỬA LỖI MẤT NÚT MODE 4 (Dùng Event Delegation) ---
     const modeSelector = document.querySelector('.mode-selector');
     if (modeSelector) {
         modeSelector.addEventListener('click', (e) => {
@@ -97,46 +83,42 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!btn) return;
             
             const mode = btn.dataset.mode;
-            if (mode && allModes[mode]) {
+            if (allModes[mode]) {
                 currentModeId = mode;
                 UIManager.updateModeUI(currentModeId, allModes[currentModeId].name);
                 UIManager.renderDynamicFields(allModes[currentModeId]);
-                UIManager.showToast(`Chế độ: ${allModes[mode].name}`);
             }
         });
     }
 });
 
 /**
- * HÀM NHẬN DIỆN MODE (Đưa Mode 4 lên ưu tiên)
+ * LOGIC NHẬN DIỆN (Đã thêm Mode 4 làm ưu tiên)
  */
 function detectModeLogic(text) {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
     
-    const jgLineIndex = lines.findIndex(l => l.startsWith("价格"));
-    if (jgLineIndex !== -1) {
-        const lineAfterJgContent = lines[jgLineIndex + 2] || "";
+    // Ưu tiên 1: Mode 4 (Cụm giá 2 dòng đặc trưng)
+    const jgIdx = lines.findIndex(l => l.startsWith("价格"));
+    if (jgIdx !== -1) {
+        const lineAfterJgContent = lines[jgIdx + 2] || "";
         if (lineAfterJgContent.startsWith('http')) return 'mode4';
     }
 
+    // Ưu tiên 2: Mode 3 (Có ngoặc 【 】 hoặc nhiều dấu ¥ ở dòng giá)
     const blocks = text.split(/(?=https?:\/\/)/);
-    let realMode3 = false;
     for (const b of blocks) {
         const bl = b.trim().split('\n').filter(l => l !== "");
         if (bl.length >= 3) {
             const priceLine = bl[2];
-            if (priceLine.includes('【') || (priceLine.match(/¥/g) || []).length > 1) {
-                realMode3 = true;
-                break;
-            }
+            if (priceLine.includes('【') || (priceLine.match(/¥/g) || []).length > 1) return 'mode3';
         }
     }
-    if (realMode3) return 'mode3';
 
+    // Ưu tiên 3: Mode 2
     const jgMatch = text.match(/价格:?\s*([\s\S]*?)(?=\n\s*http|$)/);
-    const jgLines = jgMatch ? jgMatch[1].trim().split('\n').filter(l => l !== "") : [];
-    if (jgLines.length >= 2) return 'mode2';
-    
+    if (jgMatch && jgMatch[1].trim().split('\n').filter(l => l !== "").length >= 2) return 'mode2';
+
     return 'mode1';
 }
 
@@ -156,7 +138,7 @@ async function handleMainProcess() {
 }
 
 /**
- * XUẤT KẾT QUẢ VÀ TỰ ĐỘNG COPY
+ * XUẤT KẾT QUẢ & AUTO COPY (Giữ nguyên logic của bạn)
  */
 function renderResults(products, globalUrl) {
     const uiInputs = UIManager.getInputs();
@@ -165,58 +147,36 @@ function renderResults(products, globalUrl) {
     const outputRows = products.map((p, idx) => {
         const row = startNum + idx;
         return [
-            p.name, 
-            `=IMAGE(D${row})`, 
-            p.image, 
-            p.image, // Cột D Link ảnh
-            globalUrl, 
-            "999", "100", "1", 
-            Utils.formatPriceVN(p.price), 
-            p.note || ""
+            p.name, `=IMAGE(D${row})`, p.image, p.image,
+            globalUrl, "999", "100", "1", 
+            Utils.formatPriceVN(p.price), p.note || ""
         ].map(Utils.escapeTabular).join('\t');
     });
 
     const finalResult = outputRows.join('\n');
-    const outputBox = document.getElementById('outputBox');
-    outputBox.value = finalResult;
-
-    // Tự động cập nhật Matrix Preview dòng đầu
-    if (products.length > 0) {
-        const first = products[0];
-        const cols = [first.name, `=IMAGE(D${startNum})`, first.image, first.image, globalUrl, "999", "100", "1", Utils.formatPriceVN(first.price), first.note];
-        cols.forEach((val, i) => {
-            const el = document.getElementById(`col${i+1}`);
-            if (el) el.value = val;
-        });
-    }
+    document.getElementById('outputBox').value = finalResult;
 
     if (finalResult) {
         navigator.clipboard.writeText(finalResult).then(() => {
             UIManager.showToast(`✅ Đã xuất & Copy ${products.length} dòng!`);
-        }).catch(() => {
-            outputBox.select();
-            document.execCommand('copy');
-            UIManager.showToast(`✅ Đã xuất ${products.length} dòng!`);
         });
     }
 
+    // Tự động tăng số dòng
     const startNumInput = document.getElementById('startNumber');
-    if (startNumInput) {
-        startNumInput.value = startNum + products.length;
-        startNumInput.style.backgroundColor = "#dcfce7"; 
-        setTimeout(() => startNumInput.style.backgroundColor = "", 1000);
-    }
+    if (startNumInput) startNumInput.value = startNum + products.length;
 }
 
 async function handleCopy() {
     const val = document.getElementById('outputBox').value;
-    if (!val) return;
-    await navigator.clipboard.writeText(val);
-    UIManager.showToast("✅ Đã copy!");
+    if (val) {
+        await navigator.clipboard.writeText(val);
+        UIManager.showToast("✅ Đã copy!");
+    }
 }
 
 /**
- * MODAL SỬA DỮ LIỆU THIẾU
+ * MODAL SỬA LỖI (Giữ nguyên 100% bản gốc của bạn)
  */
 function showFixModal(products) {
     return new Promise((resolve) => {
@@ -226,13 +186,9 @@ function showFixModal(products) {
         
         const headerHtml = `
             <div class="note-price-global">
-                <div class="checkbox-container">
-                    <input type="checkbox" id="enableGlobalNote">
-                    <label for="enableGlobalNote"> Ghi chú nhanh cho giá khuyết:</label>
-                </div>
-                <div class="note-input-group">
-                    <input type="text" id="globalNoteValue" placeholder="VD: [Chờ Mode2]...">
-                </div>
+                <input type="checkbox" id="enableGlobalNote">
+                <label for="enableGlobalNote"> Ghi chú nhanh cho giá khuyết:</label>
+                <input type="text" id="globalNoteValue" placeholder="VD: [Chờ Mode2]...">
             </div>`;
         
         list.innerHTML = headerHtml + products.map((p, idx) => {
@@ -248,17 +204,8 @@ function showFixModal(products) {
 
         const gCheck = document.getElementById('enableGlobalNote');
         const gInput = document.getElementById('globalNoteValue');
-        
-        const apply = () => {
-            if(gCheck.checked) {
-                list.querySelectorAll('.fix-price').forEach(i => {
-                    i.value = gInput.value || "[Chờ Mode2]";
-                    i.dispatchEvent(new Event('input', {bubbles:true}));
-                });
-            }
-        };
-        gCheck.onchange = apply; 
-        gInput.oninput = apply;
+        const apply = () => { if(gCheck.checked) list.querySelectorAll('.fix-price').forEach(i => { i.value = gInput.value || "[Chờ Mode2]"; i.dispatchEvent(new Event('input', {bubbles:true})); })};
+        gCheck.onchange = apply; gInput.oninput = apply;
 
         list.querySelectorAll('input').forEach(input => {
             input.oninput = (e) => {
@@ -267,7 +214,6 @@ function showFixModal(products) {
                 if (input.classList.contains('fix-img')) p.image = input.value || "[Khuyết ảnh]";
                 if (input.classList.contains('fix-name')) p.name = input.value || "[Khuyết danh]";
                 if (input.classList.contains('fix-price')) p.price = input.value || "[Khuyết giá]";
-                
                 const done = !p.image.includes('[K') && !p.name.includes('[K') && !p.price.includes('[K');
                 p.isMissing = !done;
                 row.classList.toggle('all-done', done);

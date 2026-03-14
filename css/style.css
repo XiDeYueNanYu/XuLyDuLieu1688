@@ -96,17 +96,6 @@ textarea:focus {
 .mode-btn.mode1.active { background: var(--primary-color); }
 .mode-btn.mode2.active { background: #059669; }
 .mode-btn.mode3.active { background: #7c3aed; }
-/* Màu sắc cho Mode 4 (ví dụ màu tím hoặc cam tùy bạn chọn) */
-.mode-btn.mode4.active {
-    background-color: #8b5cf6; /* Màu tím */
-    color: whte;
-    border-color: #7c3aed;
-}
-/* Đảm bảo các nút không bị ẩn */
-.mode-btn {
-    display: inline-block !important;
-    visibility: visible !important;
-}
 
 .btn-auto { 
     background: var(--warning-color) !important; 
@@ -329,15 +318,41 @@ textarea:focus {
     font-style: italic;
 }
 
-/* Thêm vào cuối file style.css */
-.mode-btn[data-mode="mode4"] {
-    background-color: #f3e8ff !important; /* Màu tím nhạt mặc định */
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+/* Màu nhận diện riêng cho Mode 4 */
+.mode-btn.mode4.active {
+    background-color: #7c3aed; /* Màu tím đặc trưng */
+    color: white;
+    border-color: #6d28d9;
 }
 
-.mode-btn[data-mode="mode4"].active {
-    background-color: #8b5cf6 !important; /* Màu tím đậm khi nhấn */
-    color: white !important;
+/* Tối ưu Modal sửa lỗi khi danh sách quá dài */
+.fix-data-container {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Hiệu ứng cho nút Paste & Run */
+.btn-quick {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-quick:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* Responsive cho hàng sửa lỗi */
+.fix-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.fix-item.all-done {
+    background-color: #f0fdf4;
+    border-left: 4px solid #10b981;
 }

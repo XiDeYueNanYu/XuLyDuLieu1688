@@ -1,3 +1,4 @@
+// js/modes/mode4.js
 import { Utils } from '../utils.js';
 
 export const mode4 = {
@@ -8,14 +9,12 @@ export const mode4 = {
         const products = [];
         const lines = cleanedText.split('\n').map(l => l.trim());
         
-        // Trích xuất ghi chú từ cụm 2 dòng giá
         let globalNote = "";
         const jgIdx = lines.findIndex(l => l.includes("价格"));
         if (jgIdx !== -1) {
             globalNote = (lines[jgIdx] + " " + (lines[jgIdx+1] || "")).trim();
         }
 
-        // Trích xuất sản phẩm lấy giá ở dòng 3
         const productRegex = /(https?:\/\/[^\s]+)\n([^\n]+)\n¥([\d.,\s]+)/g;
         let match;
         while ((match = productRegex.exec(cleanedText)) !== null) {

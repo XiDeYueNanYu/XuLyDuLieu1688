@@ -18,11 +18,11 @@
         <button class="mode-btn mode1 active" data-mode="mode1">MODE 1</button>
         <button class="mode-btn mode2" data-mode="mode2">MODE 2</button>
         <button class="mode-btn mode3" data-mode="mode3">MODE 3</button>
-        <button class="mode-btn mode4" data-mode="mode4">MODE 4</button> 
-        <button class="mode-btn btn-auto" id="autoDetectBtn">TỰ ĐỘNG NHẬN DIỆN</button>
-        <button id="quickProcessBtn" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-left: 8px;">
-            ⚡ Tự Động (Paste & Run)
-        </button>
+		<button class="mode-btn mode4" data-mode="mode4">MODE 4</button>
+        <button class="mode-btn btn-auto" id="autoDetectBtn">✨ TỰ ĐỘNG NHẬN DIỆN</button>
+		<button id="quickProcessBtn" style="background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-left: 8px;">
+    ⚡ Tự Động (Paste & Run)
+</button>
         <span id="modeIndicator" style="font-weight: 600; color: #64748b; margin-left: 10px;">Đang dùng MODE 1</span>
     </div>
 
@@ -64,7 +64,6 @@
                 <label>💰 Giá mặc định:</label>
                 <input type="number" id="defaultPrice" value="0">
             </div>
-            <div id="extraFieldsArea" style="display: contents;"></div>
         </div>
     </div>
 
@@ -80,7 +79,9 @@
 <div id="fixDataModal" class="modal-overlay" style="display: none;">
     <div class="modal-card">
         <h3>🛠 Phát hiện dữ liệu thiếu</h3>
-        <div id="fixDataList" class="fix-data-container"></div>
+        <p>Vui lòng bổ sung thông tin cho các sản phẩm bên dưới:</p>
+        <div id="fixDataList" class="fix-data-container">
+            </div>
         <div class="modal-footer">
             <button class="btn" id="cancelFixBtn">Hủy bỏ</button>
             <button class="btn btn-primary" id="submitFixBtn">Xác nhận & Tiếp tục</button>
@@ -89,7 +90,9 @@
 </div>
 
 <script type="module" src="js/main.js"></script>
+
 <script>
+    // Logic nút làm mới đơn giản
     document.getElementById('reloadBtn').onclick = () => location.reload();
 </script>
 
