@@ -182,22 +182,33 @@ function renderResults(products, globalUrl) {
         ].map(Utils.escapeTabular).join('\t');
     });
 
-    document.getElementById('outputBox').value = outputRows.join('\n');
-    UIManager.showToast(`✅ Đã xuất ${products.length} dòng!`);
+    const finalOutput = outputRows.join('\n');
+    document.getElementById('outputBox').value = finalOutput;
+    
+    // --- CẢI TIẾN: TỰ ĐỘNG COPY VÀO BỘ NHỚ TẠM ---
+    if (finalOutput) {
+        navigator.clipboard.writeText(finalOutput).then(() => {
+            UIManager.showToast(`✅ Đã xuất & Tự động Copy ${products.length} dòng!`);
+        }).catch(err => {
+            // Fallback nếu trình duyệt chặn clipboard API tự động
+            const outputBox = document.getElementById('outputBox');
+            outputBox.select();
+            document.execCommand('copy');
+            UIManager.showToast(`✅ Đã xuất ${products.length} dòng!`);
+        });
+    }
 
     // --- CẢI TIẾN: TỰ ĐỘNG ĐẨY SỐ DÒNG LÊN CHO LẦN SAU ---
     const nextRowNumber = startNum + products.length;
     const startNumInput = document.getElementById('startNumber');
     if (startNumInput) {
         startNumInput.value = nextRowNumber;
-        // Kích hoạt hiệu ứng đổi màu nhẹ để người dùng biết số đã nhảy
         startNumInput.style.backgroundColor = "#dcfce7"; 
         setTimeout(() => {
             startNumInput.style.backgroundColor = ""; 
         }, 1000);
     }
 }
-
 async function handleCopy() {
     const outputBox = document.getElementById('outputBox');
     if (!outputBox.value) return;
