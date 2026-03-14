@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xử lý 1688 PRO · Smart Auto v11</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="referrer" content="no-referrer">
+</head>
+<body>
+
+<div id="toast">✅ Thông báo</div>
+
+<div class="card">
+    <h2>Xử lý dữ liệu 1688 PRO (Modular System)</h2>
+
+    <div class="mode-selector">
+        <button class="mode-btn mode1 active" data-mode="mode1">MODE 1</button>
+        <button class="mode-btn mode2" data-mode="mode2">MODE 2</button>
+        <button class="mode-btn mode3" data-mode="mode3">MODE 3</button>
+        <button class="mode-btn btn-auto" id="autoDetectBtn">✨ TỰ ĐỘNG NHẬN DIỆN</button>
+        <span id="modeIndicator" style="font-weight: 600; color: #64748b; margin-left: 10px;">Đang dùng MODE 1</span>
+    </div>
+
+    <textarea id="rawInput" rows="10" placeholder="Dán dữ liệu thô (3 dòng liên tiếp: Link -> Tên -> Giá) vào đây..."></textarea>
+
+    <div class="matrix-container">
+        <div class="matrix-grid">
+            <div class="header-cell">Tên</div>
+            <div class="header-cell">Hình ảnh</div>
+            <div class="header-cell">Link ảnh</div>
+            <div class="header-cell">Link</div>
+            <div class="header-cell">URL</div>
+            <div class="header-cell">Tồn kho</div>
+            <div class="header-cell">Lực bán</div>
+            <div class="header-cell">SL Nhập</div>
+            <div class="header-cell">Giá</div>
+            <div class="header-cell">Ghi chú</div>
+        </div>
+
+        <div class="matrix-grid" id="matrixInputs">
+            <div class="input-cell"><textarea id="col1" placeholder="Cột A"></textarea></div>
+            <div class="input-cell"><textarea id="col2" readonly>=IMAGE(D49)</textarea></div>
+            <div class="input-cell"><textarea id="col3" placeholder="Cột C"></textarea></div>
+            <div class="input-cell"><textarea id="col4" placeholder="Cột D"></textarea></div>
+            <div class="input-cell"><textarea id="col5" placeholder="Cột E"></textarea></div>
+            <div class="input-cell"><textarea id="col6" placeholder="Cột F"></textarea></div>
+            <div class="input-cell"><textarea id="col7" placeholder="Cột G"></textarea></div>
+            <div class="input-cell"><textarea id="col8" placeholder="Cột H"></textarea></div>
+            <div class="input-cell"><textarea id="col9" placeholder="Cột I"></textarea></div>
+            <div class="input-cell"><textarea id="col10" placeholder="Cột J"></textarea></div>
+        </div>
+
+        <div class="dynamic-controls" id="dynamicFields">
+            <div class="input-group-pill" title="Cuộn chuột để chỉnh dòng">
+                <label>🔢 Dòng đầu:</label>
+                <input type="number" id="startNumber" value="49">
+            </div>
+            <div class="input-group-pill">
+                <label>💰 Giá mặc định:</label>
+                <input type="number" id="defaultPrice" value="0">
+            </div>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button class="btn btn-primary" id="processBtn">⚙️ Xử lý & Xuất</button>
+        <button class="btn btn-success" id="copyBtn">📋 Copy Kết quả</button>
+        <button class="btn" id="reloadBtn">🔄 Làm mới</button>
+    </div>
+
+    <textarea id="outputBox" rows="8" readonly placeholder="Kết quả Tab-Separated sẽ xuất hiện tại đây..."></textarea>
+</div>
+
+<div id="fixDataModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+        <h3>🛠 Phát hiện dữ liệu thiếu</h3>
+        <p>Vui lòng bổ sung thông tin cho các sản phẩm bên dưới:</p>
+        <div id="fixDataList" class="fix-data-container">
+            </div>
+        <div class="modal-footer">
+            <button class="btn" id="cancelFixBtn">Hủy bỏ</button>
+            <button class="btn btn-primary" id="submitFixBtn">Xác nhận & Tiếp tục</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+
+<script>
+    // Logic nút làm mới đơn giản
+    document.getElementById('reloadBtn').onclick = () => location.reload();
+</script>
+
+</body>
+</html>

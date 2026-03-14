@@ -1,0 +1,17 @@
+/1688-pro-v11
+├── index.html              # Chỉ chứa khung HTML
+├── css/
+│   └── style.css           # Chứa toàn bộ CSS (tách ra từ file cũ)
+└── js/
+    ├── main.js             # File điều phối chính
+    ├── ui-manager.js       # Xử lý hiển thị (Toast, Dynamic Inputs)
+    ├── utils.js            # Các hàm bổ trợ (formatPriceVN, extractURL)
+    ├── pre-processor.js    # Modul xử lý dữ liệu thiếu ([Khuyết...])
+    └── modes/              # Danh sách các mode xử lý
+        ├── mode1.js
+        ├── mode2.js
+        └── mode3.js
+		
+		
+----------
+python -m http.server 8000 --bind 127.0.0.1
