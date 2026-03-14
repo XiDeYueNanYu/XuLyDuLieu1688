@@ -3,7 +3,7 @@ import { Utils } from '../utils.js';
 
 export const mode3 = {
     id: 'mode3',
-    name: 'MODE 3 (Tách phiên bản trong 【 】)',
+    name: 'MODE 3 (Tách phiên bản trong ◤ ◥)',
     execute: (cleanedText, inputs) => {
         const products = [];
         
@@ -28,9 +28,9 @@ export const mode3 = {
                 const mainName = lines[1];
                 let dirtyPriceLine = lines[2]; 
 
-                // --- CẢI TIẾN MỚI: Xử lý dấu hiệu 【 】 ---
-                // Tìm nội dung nằm giữa 【 và 】
-                const bracketMatch = dirtyPriceLine.match(/【([\s\S]*?)】/);
+                // --- CẢI TIẾN MỚI: Xử lý dấu hiệu ◤ ◥ ---
+                // Tìm nội dung nằm giữa ◤ và ◥
+                const bracketMatch = dirtyPriceLine.match(/◤([\s\S]*?)◥/);
                 if (bracketMatch) {
                     dirtyPriceLine = bracketMatch[1].trim(); // Chỉ lấy nội dung bên trong
                 }

@@ -105,13 +105,13 @@ function detectModeLogic(text) {
         if (lineAfterJgContent.startsWith('http')) return 'mode4';
     }
 
-    // Ưu tiên 2: Mode 3 (Có ngoặc 【 】 hoặc nhiều dấu ¥ ở dòng giá)
+    // Ưu tiên 2: Mode 3 (Có ngoặc ◤ ◥ hoặc nhiều dấu ¥ ở dòng giá)
     const blocks = text.split(/(?=https?:\/\/)/);
     for (const b of blocks) {
         const bl = b.trim().split('\n').filter(l => l !== "");
         if (bl.length >= 3) {
             const priceLine = bl[2];
-            if (priceLine.includes('【') || (priceLine.match(/¥/g) || []).length > 1) return 'mode3';
+            if (priceLine.includes('◤') || (priceLine.match(/¥/g) || []).length > 1) return 'mode3';
         }
     }
 
