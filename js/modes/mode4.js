@@ -7,12 +7,12 @@ export const mode4 = {
     extraFields: [],
     execute: (cleanedText, inputs) => {
         const products = [];
-        const lines = cleanedText.split('\n').map(l => l.trim());
+        const lines = cleanedText.split('\n').map(l => l.trim()).filter(l => l !== "");
         
         let globalNote = "";
         const jgIdx = lines.findIndex(l => l.includes("价格"));
-        if (jgIdx !== -1) {
-            globalNote = (lines[jgIdx] + " " + (lines[jgIdx+1] || "")).trim();
+        if (jgIdx !== -1 && lines.length > jgIdx + 1) {
+            globalNote = (lines[jgIdx] + " " + lines[jgIdx+1]).trim();
         }
 
         const productRegex = /(https?:\/\/[^\s]+)\n([^\n]+)\n¥([\d.,\s]+)/g;
