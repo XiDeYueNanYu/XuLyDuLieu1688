@@ -23,80 +23,46 @@ document.addEventListener('DOMContentLoaded', () => {
     if (copyBtn) copyBtn.addEventListener('click', handleCopy);
     
     // --- NÚT TỰ ĐỘNG NHẬN DIỆN ---
-if (autoDetectBtn) {
-    autoDetectBtn.addEventListener('click', async (e) => {
-        if (e) e.stopPropagation(); 
-        
-        const rawInput = document.getElementById('rawInput');
-        const outputBox = document.getElementById('outputBox');
-        const originalValue = rawInput.value;
+    if (autoDetectBtn) {
+        autoDetectBtn.addEventListener('click', async (e) => {
+            if (e) e.stopPropagation(); 
+            const rawInput = document.getElementById('rawInput');
+            const originalValue = rawInput.value;
 
-        // 1. Kiểm tra trống
-        if (!originalValue.trim()) {
-            if (outputBox) {
-                outputBox.value = "";
-                // Thông báo cho Extension là dữ liệu đã trống
-                outputBox.dispatchEvent(new Event('input', { bubbles: true }));
+            if (!originalValue.trim()) {
+                UIManager.showToast("❌ Dữ liệu trống!");
+                return;
             }
-            UIManager.showToast("❌ Dữ liệu trống!");
-            return;
-        }
 
-        // 2. Phân tích kiểm tra lỗi khuyết
-        let { products, globalUrl } = analyzeData(originalValue);
-
-        // 3. Nếu khuyết: Xóa output và dừng (Đúng yêu cầu của bạn)
-        if (products.length === 0 || products.some(p => p.isMissing)) {
-            if (outputBox) {
-                outputBox.value = ""; 
-                // Kích hoạt sự kiện để Extension biết dữ liệu hiện tại là rỗng/lỗi
-                outputBox.dispatchEvent(new Event('input', { bubbles: true }));
+            let { products, globalUrl } = analyzeData(originalValue);
+            if (products.length === 0) {
+                UIManager.showToast("❌ Không tìm thấy SP!");
+                return;
             }
-            
-            const msg = products.length === 0 ? "❌ Không tìm thấy SP!" : "⚠️ Dữ liệu khuyết, đã dừng xử lý.";
-            UIManager.showToast(msg);
-            return; 
-        }
 
-        // 4. Nhận diện Mode
-        const detectedId = detectModeLogic(originalValue);
-        
-        if (detectedId) {
-            currentModeId = detectedId;
-            UIManager.updateModeUI(currentModeId, allModes[currentModeId].name);
-            UIManager.renderDynamicFields(allModes[currentModeId]);
-            
-            try {
-                const uiInputs = UIManager.getInputs();
-                const processedProducts = allModes[currentModeId].execute(originalValue, uiInputs);
+            // Xử lý thiếu dữ liệu bằng Modal gốc của bạn
+            let fixedProducts = products.some(p => p.isMissing) ? await showFixModal(products) : products;
+            if (!fixedProducts) return;
+
+            const updatedFullText = rebuildRawData(originalValue, fixedProducts);
+            rawInput.value = updatedFullText;
+
+            // Nhận diện Mode thông minh
+            const detectedId = detectModeLogic(updatedFullText);
+            if (detectedId) {
+                currentModeId = detectedId;
+                UIManager.updateModeUI(currentModeId, allModes[currentModeId].name);
+                UIManager.renderDynamicFields(allModes[currentModeId]);
+                UIManager.showToast(`🤖 AI Nhận diện: ${allModes[currentModeId].name}`);
                 
-                if (processedProducts && processedProducts.length > 0) {
-                    // 5. Xuất kết quả
-                    const finalTabular = UIManager.formatToTabular(processedProducts, uiInputs, globalUrl);
-                    outputBox.value = finalTabular;
-
-                    // MẤU CHỐT: Phát sự kiện 'input' để Extension nhận diện được dữ liệu mới
-                    outputBox.dispatchEvent(new Event('input', { bubbles: true }));
-                    outputBox.dispatchEvent(new Event('change', { bubbles: true }));
-
-                    UIManager.showToast(`✅ Xong! Đã gửi dữ liệu cho Extension.`);
-                } else {
-                    outputBox.value = "";
-                    outputBox.dispatchEvent(new Event('input', { bubbles: true }));
-                    UIManager.showToast("❌ Mode không trích xuất được dữ liệu!");
-                }
-            } catch (err) {
-                outputBox.value = "";
-                outputBox.dispatchEvent(new Event('input', { bubbles: true }));
-                UIManager.showToast("❌ Lỗi thực thi hệ thống.");
+                const uiInputs = UIManager.getInputs();
+                const processedProducts = allModes[currentModeId].execute(updatedFullText, uiInputs);
+                renderResults(processedProducts, globalUrl);
             }
-        } else {
-            UIManager.showToast("ℹ️ Không nhận diện được Mode.");
-        }
-    });
-}
+        });
+    }
 
-   // --- NÚT ⚡ TỰ ĐỘNG (PASTE & RUN) ---
+    // --- NÚT ⚡ TỰ ĐỘNG (PASTE & RUN) ---
     if (quickProcessBtn) {
         quickProcessBtn.addEventListener('click', async () => {
             try {
