@@ -122,7 +122,7 @@ function detectModeLogic(text) {
     return 'mode1';
 }
 
-async function handleMainProcess() {
+/* async function handleMainProcess() { // hàm hoạt động tốt - cho nhập thủ công, hàm thay thế phía dưới cho phép tự động hóa quy trình, lưu lại để xử lý thủ công
     const rawInput = document.getElementById('rawInput');
     let { products, globalUrl } = analyzeData(rawInput.value);
     if (products.length === 0) return UIManager.showToast("❌ Không tìm thấy SP!");
@@ -135,7 +135,74 @@ async function handleMainProcess() {
     
     const processed = allModes[currentModeId].execute(updatedText, UIManager.getInputs());
     renderResults(processed, globalUrl);
+} */
+
+/**
+ * HÀM XỬ LÝ CHÍNH - KHÔNG CẦN MODE1
+ */
+async function handleMainProcess() {
+    const rawInput = document.getElementById('rawInput');
+    const text = rawInput.value.trim();
+
+    if (!text) return UIManager.showToast("❌ Dữ liệu trống!");
+
+    // 1. Tách các khối dựa trên ít nhất một dòng trống
+    const blocks = text.split(/\n\s*\n/).map(b => b.trim()).filter(b => b !== "");
+
+    // 2. Tìm Global URL (Dòng bắt đầu bằng URL:)
+    let globalUrl = "";
+    const urlBlock = blocks.find(b => b.toUpperCase().startsWith("URL:"));
+    if (urlBlock) {
+        globalUrl = urlBlock.replace(/URL:\s*/i, "").trim();
+    }
+
+    // 3. Lấy Ghi chú chung (Khối bắt đầu bằng 价格)
+    let globalNote = "";
+    const jgBlock = blocks.find(b => b.startsWith("价格"));
+    if (jgBlock) {
+        // Lấy toàn bộ nội dung sau "价格:" làm ghi chú
+        globalNote = jgBlock.replace(/价格:?\s*/, "").replace(/\n/g, " ").trim();
+    }
+
+    // 4. Lọc và xử lý các khối Sản phẩm
+    const products = blocks
+        .filter(b => !b.startsWith("价格") && !b.toUpperCase().startsWith("URL:"))
+        .map(block => {
+            const lines = block.split('\n').map(l => l.trim());
+            const imageUrl = lines.find(l => l.startsWith('http')) || "";
+            
+            // Tìm dòng có chứa ký hiệu tiền tệ ¥
+            const priceLine = lines.find(l => l.includes('¥')) || "";
+
+            // Kiểm tra "Hụt": Nếu không đủ 3 dòng hoặc thiếu giá/ảnh
+            const isMissing = lines.length < 3 || !priceLine || !imageUrl;
+
+            if (isMissing) {
+                return {
+                    image: imageUrl || "[Khuyết ảnh]",
+                    name: "⚠️ KIỂM TRA THỦ CÔNG",
+                    price: priceLine || "KIỂM TRA THỦ CÔNG",
+                    note: "Dữ liệu thiếu/Lỗi",
+                    isMissing: true
+                };
+            }
+
+            // Trường hợp đủ dữ liệu:
+            return {
+                image: imageUrl,
+                name: lines[1], // Dòng thứ 2 làm tên
+                price: priceLine, // Dòng chứa ¥ làm giá
+                note: globalNote || "Giá gốc",
+                isMissing: false
+            };
+        });
+
+    if (products.length === 0) return UIManager.showToast("❌ Không tìm thấy SP!");
+
+    // 5. Xuất kết quả qua hàm render có sẵn của bạn
+    renderResults(products, globalUrl);
 }
+
 
 /**
  * XUẤT KẾT QUẢ & AUTO COPY (Giữ nguyên logic của bạn)
