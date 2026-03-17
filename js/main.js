@@ -28,27 +28,29 @@ if (autoDetectBtn) {
         if (e) e.stopPropagation(); 
         
         const rawInput = document.getElementById('rawInput');
-        const outputBox = document.getElementById('outputBox'); // Lấy khung kết quả
+        const outputBox = document.getElementById('outputBox');
         const originalValue = rawInput.value;
 
-        // 1. Kiểm tra dữ liệu trống
+        // 1. Kiểm tra trống - Xóa output để Extension không lấy nhầm dữ liệu cũ
         if (!originalValue.trim()) {
-            if (outputBox) outputBox.value = ""; // Xóa trắng nếu input trống
+            if (outputBox) outputBox.value = "";
             UIManager.showToast("❌ Dữ liệu trống!");
             return;
         }
 
-        // 2. Phân tích sơ bộ
+        // 2. Phân tích để kiểm tra tính toàn vẹn
         let { products, globalUrl } = analyzeData(originalValue);
 
-        // 3. THAY ĐỔI TẠI ĐÂY: Nếu có lỗi khuyết thông tin
+        // 3. Xử lý khi dữ liệu khuyết
         if (products.length === 0 || products.some(p => p.isMissing)) {
-            // Xóa sạch khung văn bản đầu ra trước khi dừng
             if (outputBox) outputBox.value = ""; 
             
-            const msg = products.length === 0 ? "❌ Không tìm thấy SP!" : "⚠️ Dữ liệu khuyết, đã xóa kết quả cũ.";
-            UIManager.showToast(msg);
-            return; // Dừng luôn
+            // Extension thường đọc giá trị Output, nếu ta để trống, nó sẽ hiểu là xử lý thất bại
+            UIManager.showToast("⚠️ Dữ liệu lỗi/khuyết. Extension dừng.");
+            
+            // Gửi một thông điệp ẩn nếu cần để Extension biết (tùy vào logic content.js của bạn)
+            // console.log("PROCESS_FAILED"); 
+            return; 
         }
 
         // 4. Nhận diện Mode
@@ -64,17 +66,21 @@ if (autoDetectBtn) {
                 const processedProducts = allModes[currentModeId].execute(originalValue, uiInputs);
                 
                 if (processedProducts && processedProducts.length > 0) {
-                    // 5. Nếu mọi thứ ổn, xuất kết quả mới
+                    // 5. Xuất kết quả chuẩn cho Extension lấy
                     const finalTabular = UIManager.formatToTabular(processedProducts, uiInputs, globalUrl);
                     outputBox.value = finalTabular;
-                    UIManager.showToast(`✅ Đã xong ${processedProducts.length} SP`);
+                    
+                    // Phát đi sự kiện 'input' để Extension biết dữ liệu đã thay đổi
+                    outputBox.dispatchEvent(new Event('input', { bubbles: true }));
+                    
+                    UIManager.showToast(`✅ Xong! Extension có thể lấy dữ liệu.`);
                 } else {
-                    outputBox.value = ""; // Xóa nếu không trích xuất được gì
-                    UIManager.showToast("❌ Mode không tìm thấy dữ liệu!");
+                    if (outputBox) outputBox.value = "";
+                    UIManager.showToast("❌ Không trích xuất được SP.");
                 }
             } catch (err) {
-                outputBox.value = ""; // Xóa nếu gặp lỗi logic
-                UIManager.showToast("❌ Lỗi thực thi hệ thống.");
+                if (outputBox) outputBox.value = "";
+                UIManager.showToast("❌ Lỗi Logic xử lý.");
             }
         } else {
             UIManager.showToast("ℹ️ Không nhận diện được Mode.");
