@@ -28,67 +28,59 @@ if (autoDetectBtn) {
         if (e) e.stopPropagation(); 
         
         const rawInput = document.getElementById('rawInput');
+        const outputBox = document.getElementById('outputBox'); // Lấy khung kết quả
         const originalValue = rawInput.value;
 
         // 1. Kiểm tra dữ liệu trống
         if (!originalValue.trim()) {
+            if (outputBox) outputBox.value = ""; // Xóa trắng nếu input trống
             UIManager.showToast("❌ Dữ liệu trống!");
             return;
         }
 
-        // 2. Phân tích sơ bộ để trích xuất danh sách SP và URL
+        // 2. Phân tích sơ bộ
         let { products, globalUrl } = analyzeData(originalValue);
 
-        // 3. Kiểm tra nếu không quét được sản phẩm nào
-        if (products.length === 0) {
-            UIManager.showToast("❌ Không tìm thấy sản phẩm!");
-            return;
+        // 3. THAY ĐỔI TẠI ĐÂY: Nếu có lỗi khuyết thông tin
+        if (products.length === 0 || products.some(p => p.isMissing)) {
+            // Xóa sạch khung văn bản đầu ra trước khi dừng
+            if (outputBox) outputBox.value = ""; 
+            
+            const msg = products.length === 0 ? "❌ Không tìm thấy SP!" : "⚠️ Dữ liệu khuyết, đã xóa kết quả cũ.";
+            UIManager.showToast(msg);
+            return; // Dừng luôn
         }
 
-        // 4. THAY ĐỔI QUAN TRỌNG: Kiểm tra dữ liệu khuyết
-        // Nếu có bất kỳ SP nào thiếu thông tin (isMissing = true), dừng luôn, không hiện Modal
-        if (products.some(p => p.isMissing)) {
-            UIManager.showToast("⚠️ Dữ liệu bị khuyết, đã dừng xử lý.");
-            return; // Dừng tại đây, không làm gì tiếp theo
-        }
-
-        // 5. Nhận diện Mode thông minh từ văn bản gốc
+        // 4. Nhận diện Mode
         const detectedId = detectModeLogic(originalValue);
         
         if (detectedId) {
-            // Cập nhật Mode được nhận diện lên hệ thống
             currentModeId = detectedId;
             UIManager.updateModeUI(currentModeId, allModes[currentModeId].name);
             UIManager.renderDynamicFields(allModes[currentModeId]);
-            UIManager.showToast(`🤖 AI: ${allModes[currentModeId].name}`);
             
-            // 6. Chạy logic xử lý của Mode đó
             try {
                 const uiInputs = UIManager.getInputs();
                 const processedProducts = allModes[currentModeId].execute(originalValue, uiInputs);
                 
-                // 7. Xuất kết quả thẳng ra Output (Sử dụng formatToTabular của UIManager)
                 if (processedProducts && processedProducts.length > 0) {
+                    // 5. Nếu mọi thứ ổn, xuất kết quả mới
                     const finalTabular = UIManager.formatToTabular(processedProducts, uiInputs, globalUrl);
-                    const outputBox = document.getElementById('outputBox');
-                    if (outputBox) {
-                        outputBox.value = finalTabular;
-                        UIManager.showToast(`✅ Thành công: ${processedProducts.length} SP`);
-                    }
+                    outputBox.value = finalTabular;
+                    UIManager.showToast(`✅ Đã xong ${processedProducts.length} SP`);
                 } else {
-                    UIManager.showToast("❌ Mode không trích xuất được dữ liệu!");
+                    outputBox.value = ""; // Xóa nếu không trích xuất được gì
+                    UIManager.showToast("❌ Mode không tìm thấy dữ liệu!");
                 }
             } catch (err) {
-                console.error("Lỗi thực thi Mode:", err);
-                UIManager.showToast("❌ Có lỗi xảy ra khi chạy Mode.");
+                outputBox.value = ""; // Xóa nếu gặp lỗi logic
+                UIManager.showToast("❌ Lỗi thực thi hệ thống.");
             }
         } else {
-            // Nếu không nhận diện được mode thì thôi
-            UIManager.showToast("ℹ️ Không nhận diện được Mode phù hợp.");
+            UIManager.showToast("ℹ️ Không nhận diện được Mode.");
         }
     });
 }
-
     // --- NÚT ⚡ TỰ ĐỘNG (PASTE & RUN) ---
     if (quickProcessBtn) {
         quickProcessBtn.addEventListener('click', async () => {
